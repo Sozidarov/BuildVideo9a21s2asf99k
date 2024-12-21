@@ -46,6 +46,25 @@
         #search button:hover {
             background-color: #e60000;
         }
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .nav-button {
+            color: #fff;
+            background-color: #FF0000;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-decoration: none;
+            font-size: 1em;
+        }
+        .nav-button:hover {
+            background-color: #e60000;
+        }
         main {
             padding: 20px;
         }
@@ -76,18 +95,6 @@
             margin: 10px;
             color: #fff;
         }
-        .channel-view {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-        .channel-info {
-            margin-bottom: 20px;
-        }
-        .channel-avatar {
-            border-radius: 50%;
-            width: 100px;
-            height: 100px;
-        }
         .load-more {
             text-align: center;
             margin-top: 20px;
@@ -104,109 +111,65 @@
         .load-more button:hover {
             background-color: #e60000;
         }
-        #channel-description {
-            max-height: 50px;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        @media (max-width: 768px) {
+            #search input {
+                width: 100%;
+            }
+            .video-card {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
     <header>
-        <h1 id="home">YouTube Clone</h1>
+        <h1 id="home">🎈BuildTube</h1>
         <div id="search">
             <input type="text" id="query" placeholder="Search for videos or channels">
             <button id="searchBtn">Search</button>
         </div>
+        <div class="nav-right">
+            <button class="nav-button" id="homeBtn">Главная</button>
+        </div>
     </header>
     <main>
-        <div id="channel-view" style="display: none;">
-            <div class="channel-view">
-                <img id="channel-avatar" class="channel-avatar" alt="Channel Avatar">
-                <h2 id="channel-title"></h2>
-                <p id="channel-description"></p>
-                <button id="show-more" style="display: none;">Show More</button>
-                <p id="channel-subscribers"></p>
-            </div>
-            <h2 id="channel-videos-title"></h2>
-            <div class="video-container" id="channel-videos"></div>
-        </div>
         <h2 id="search-results-title">Recommendations</h2>
         <div class="video-container" id="videos"></div>
         <div class="load-more" id="load-more" style="display: none;">
             <button>Load More</button>
         </div>
     </main>
-
     <script>
-        const API_KEY = 'AIzaSyCj64XwoLdDtB3i12pVjh3D30Gc6RH45iM'; // Replace with your YouTube Data API key
+        const API_KEY = 'AIzaSyCj64XwoLdDtB3i12pVjh3D30Gc6RH45iM'; // Укажите ваш API ключ
         const searchBtn = document.getElementById('searchBtn');
         const queryInput = document.getElementById('query');
         const videosContainer = document.getElementById('videos');
         const searchResultsTitle = document.getElementById('search-results-title');
         const homeButton = document.getElementById('home');
-        const channelView = document.getElementById('channel-view');
-        const channelAvatar = document.getElementById('channel-avatar');
-        const channelTitle = document.getElementById('channel-title');
-        const channelDescription = document.getElementById('channel-description');
-        const channelSubscribers = document.getElementById('channel-subscribers');
-        const channelVideosContainer = document.getElementById('channel-videos');
-        const channelVideosTitle = document.getElementById('channel-videos-title');
-        const showMoreButton = document.getElementById('show-more');
+        const homeNavButton = document.getElementById('homeBtn');
         const loadMoreButton = document.getElementById('load-more');
 
         let nextPageToken = '';
-        let currentChannelId = '';
 
-        // Function to handle geolocation and send it to the server
-        function getGeolocation() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition((position) => {
-                    const lat = position.coords.latitude;
-                    const lon = position.coords.longitude;
-                    console.log('User location:', lat, lon);
-                    
-                    // Send geolocation data to your server (replace with actual server URL)
-                    fetch('https://your-server.com/api/update-location', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            latitude: lat,
-                            longitude: lon
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log('Location updated on server:', data);
-                    })
-                    .catch(error => {
-                        console.error('Error updating location on server:', error);
-                    });
-                });
-            } else {
-                console.log('Geolocation is not supported by this browser.');
+        // Поиск по кнопке Enter
+        queryInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                searchBtn.click();
             }
-        }
-
-        // Call the geolocation function when the page loads
-        getGeolocation();
-
-        homeButton.addEventListener('click', () => {
-            queryInput.value = '';
-            channelView.style.display = 'none';
-            fetchRecommendations();
         });
 
         searchBtn.addEventListener('click', () => {
-            const query = queryInput.value;
+            const query = queryInput.value.trim();
             if (!query) {
                 alert('Please enter a search term');
                 return;
             }
             fetchResults(query);
         });
+
+        homeButton.addEventListener('click', showRecommendations);
+        homeNavButton.addEventListener('click', showRecommendations);
 
         loadMoreButton.addEventListener('click', () => {
             if (nextPageToken) {
@@ -216,8 +179,8 @@
 
         async function fetchResults(query) {
             try {
-                searchResultsTitle.textContent = 'Search Results';
-                const response = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video,channel&key=${API_KEY}`);
+                searchResultsTitle.textContent = 'Search';
+                const response = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&key=${API_KEY}`);
                 const data = await response.json();
                 displayVideos(data.items);
             } catch (error) {
@@ -230,7 +193,7 @@
             try {
                 const response = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular&regionCode=US&key=${API_KEY}&pageToken=${pageToken}`);
                 const data = await response.json();
-                displayVideos(data.items, true);
+                displayVideos(data.items, pageToken !== '');
                 nextPageToken = data.nextPageToken || '';
                 loadMoreButton.style.display = nextPageToken ? 'block' : 'none';
             } catch (error) {
@@ -238,73 +201,49 @@
             }
         }
 
-        async function fetchChannel(channelId) {
-            try {
-                channelView.style.display = 'block';
-                const response = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${channelId}&key=${API_KEY}`);
-                const data = await response.json();
-                const channel = data.items[0];
-                channelAvatar.src = channel.snippet.thumbnails.high.url;
-                channelTitle.textContent = channel.snippet.title;
-                channelDescription.textContent = channel.snippet.description.substring(0, 150);
-                channelSubscribers.textContent = `${channel.statistics.subscriberCount} subscribers`;
-                channelVideosTitle.textContent = `Videos by ${channel.snippet.title}`;
-                currentChannelId = channelId;
-                fetchChannelVideos(channelId);
-            } catch (error) {
-                console.error('Error fetching channel:', error);
-            }
-        }
-
-        async function fetchChannelVideos(channelId) {
-            try {
-                const response = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&type=video&key=${API_KEY}`);
-                const data = await response.json();
-                displayChannelVideos(data.items);
-            } catch (error) {
-                console.error('Error fetching channel videos:', error);
-            }
+        function showRecommendations() {
+            queryInput.value = ''; // Очистить поле поиска
+            videosContainer.innerHTML = ''; // Очистить текущие видео
+            searchResultsTitle.textContent = 'Recommendations'; // Обновить заголовок
+            fetchRecommendations(); // Загрузить рекомендации
         }
 
         function displayVideos(videos, append = false) {
-            if (!append) videosContainer.innerHTML = '';
-            videos.forEach(video => {
-                const videoCard = document.createElement('div');
-                videoCard.classList.add('video-card');
+    if (!append) videosContainer.innerHTML = '';
+    if (videos.length === 0) {
+        videosContainer.innerHTML = '<p>No results found</p>';
+        return;
+    }
+    videos.forEach(video => {
+        const videoCard = document.createElement('div');
+        videoCard.classList.add('video-card');
 
-                const iframe = document.createElement('iframe');
-                iframe.src = `https://www.youtube.com/embed/${video.id.videoId || video.id}`;
-                iframe.allow = 'autoplay; encrypted-media';
-                iframe.allowFullscreen = true;
+        const iframe = document.createElement('iframe');
+        iframe.src = `https://www.youtube.com/embed/${video.id.videoId || video.id}`;
+        iframe.allow = 'autoplay; encrypted-media';
+        iframe.allowFullscreen = true;
 
-                const title = document.createElement('h3');
-                title.textContent = video.snippet.title;
+        iframe.onload = function() {
+            // Видео загружено успешно
+            console.log(`Video ${video.snippet.title} loaded successfully.`);
+        };
 
-                videoCard.appendChild(iframe);
-                videoCard.appendChild(title);
-                videosContainer.appendChild(videoCard);
-            });
-        }
+        iframe.onerror = function() {
+            // Ошибка при загрузке видео
+            const errorMessage = document.createElement('p');
+            errorMessage.textContent = 'This video is unavailable in your region.';
+            videoCard.appendChild(errorMessage);
+        };
 
-        function displayChannelVideos(videos) {
-            channelVideosContainer.innerHTML = '';
-            videos.forEach(video => {
-                const videoCard = document.createElement('div');
-                videoCard.classList.add('video-card');
+        const title = document.createElement('h3');
+        title.textContent = video.snippet.title;
 
-                const iframe = document.createElement('iframe');
-                iframe.src = `https://www.youtube.com/embed/${video.id.videoId || video.id}`;
-                iframe.allow = 'autoplay; encrypted-media';
-                iframe.allowFullscreen = true;
+        videoCard.appendChild(iframe);
+        videoCard.appendChild(title);
+        videosContainer.appendChild(videoCard);
+    });
+}
 
-                const title = document.createElement('h3');
-                title.textContent = video.snippet.title;
-
-                videoCard.appendChild(iframe);
-                videoCard.appendChild(title);
-                channelVideosContainer.appendChild(videoCard);
-            });
-        }
 
         fetchRecommendations();
     </script>
